@@ -33,6 +33,15 @@ void sendHTTP(const char* message) {
     catch (int errorNumber) {
         throw std::runtime_error("Could not send message:" + std::string(strerror(errorNumber)));
     }
+
+    char buffer[1024] = {0}; 
+    int received = recv(clientSocket, buffer, sizeof(buffer), 0);
+    if (received == -1) {
+        throw std::runtime_error("Failed getting response:" + std::string(strerror(errno)));
+    }
+
+    std::cout << "resp: " << buffer << "\n";
+
     close(clientSocket);
 }
 
