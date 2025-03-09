@@ -7,19 +7,27 @@
 #include <unistd.h>
 #include <iostream>
 #include <string>
+#include "http_request.h"
 
 int createSocket(long address = INADDR_ANY, int port = 8080);
 void sendHTTP(const char* message);
+std::string createHttpRequest(std::string message);
 
 int main() { 
     std::string message;
     while (true) {
         std::cout << "Message: ";
         std::getline(std::cin, message);
-        const char* convertedMsg = message.c_str();
-        sendHTTP(convertedMsg);
+        std::string req = createHttpRequest(message);
+        const char* convertedReq = req.c_str();
+        sendHTTP(convertedReq);
     }
     return 0;
+}
+
+std::string createHttpRequest(std::string message) {
+    HttpRequest req("GET", message);
+    return req.serialize();
 }
 
 void sendHTTP(const char* message) {
@@ -39,9 +47,7 @@ void sendHTTP(const char* message) {
     if (received == -1) {
         throw std::runtime_error("Failed getting response:" + std::string(strerror(errno)));
     }
-
-    std::cout << "resp: " << buffer << "\n";
-
+    std::cout << "Resp: " << buffer << "\n";
     close(clientSocket);
 }
 
