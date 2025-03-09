@@ -1,4 +1,5 @@
 #include <asm-generic/socket.h>
+#include <iostream>
 #include <string>
 #include <sys/socket.h>
 #include <stdexcept>
@@ -10,9 +11,11 @@
 #include <cctype>
 #include <bits/stdc++.h>
 #include "http_request.h"
+#include "http_request.h"
+#include "http_response.h"
 
 int createSocket(long address = INADDR_ANY, int port = 8080);
-std::string handleHTTP(HttpRequest req);
+HttpResponse handleHTTP(HttpRequest req);
 
 int main() {
     int serverFd = createSocket(); 
@@ -25,8 +28,10 @@ int main() {
         }
         std::string stringReq = buffer;
         HttpRequest req = HttpRequest::deserialize(stringReq);
-        std::string resp = handleHTTP(req);
-        int sent = send(clientSocket, resp.c_str(), resp.length(), 0);
+        std::cout << "Got request: " << req.stringify() << "\n";
+        HttpResponse resp = handleHTTP(req);
+        std::string respSerialized = resp.serialize();
+        int sent = send(clientSocket, respSerialized.c_str(), respSerialized.length(), 0);
         if (sent == -1) {
             throw std::runtime_error("Failed sending response:" + std::string(strerror(errno)));
         }
@@ -63,7 +68,7 @@ int createSocket(long address, int port) {
     return serverSocket;
 }
 
-std::string handleHTTP(HttpRequest req) {
+HttpResponse handleHTTP(HttpRequest req) {
     std::map<std::string, std::string> pageMaps{
         {
             "/", "<h1>Home page</h1>"
@@ -76,9 +81,13 @@ std::string handleHTTP(HttpRequest req) {
         }
     };
 
+    std::string responseBody = "";
     if (auto search = pageMaps.find(req.url); search != pageMaps.end()) {
-        return search->second;
+        responseBody = search->second;
     } else {
-       return "<h1>404 Page not found</h1>"; 
+        responseBody = "<h1>404 Page not found</h1>"; 
     }
+    HttpResponse resp("HTTP 1.0", "200", "OK");
+    resp.body = responseBody;
+    return resp; 
 }

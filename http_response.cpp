@@ -1,8 +1,8 @@
-#include "http_request.h"
+#include "http_response.h"
 #include <sstream>
 #include <string>
 
-int HttpRequest::extractFieldFrom(int start, const std::string& data, std::string &result) {
+int HttpResponse::extractFieldFrom(int start, const std::string& data, std::string &result) {
     int begin = start;
     std::stringstream num;
     while (data[begin] != '$') {
@@ -21,7 +21,7 @@ int HttpRequest::extractFieldFrom(int start, const std::string& data, std::strin
     return begin;
 }
 
-int HttpRequest::extractHeaders(int start, const std::string& data, std::map<std::string, std::string>& headers) {
+int HttpResponse::extractHeaders(int start, const std::string& data, std::map<std::string, std::string>& headers) {
     int begin = start;
     std::stringstream num;
     while (data[begin] != '$') {
@@ -41,27 +41,27 @@ int HttpRequest::extractHeaders(int start, const std::string& data, std::map<std
     return begin;
 }
 
-HttpRequest::HttpRequest() {
-    method = "";
-    url = "";
+HttpResponse::HttpResponse() {
     version = "";
+    status = "";
+    statusMsg = "";
     headers = {};
     body = "";
 }
 
-HttpRequest::HttpRequest(std::string _method, std::string _url, std::string _version) {
-    method = _method;
-    url = _url;
+HttpResponse::HttpResponse(std::string _version, std::string _status, std::string _statusMsg) {
     version = _version;
+    status = _status;
+    statusMsg = _statusMsg;
     headers = {};
     body = "";
 }
 
-std::string HttpRequest::serialize() {
+std::string HttpResponse::serialize() {
     std::stringstream ss;
-    ss << method.length() << "$" << method;
-    ss << url.length() << "$" << url;
     ss << version.length() << "$" << version;
+    ss << status.length() << "$" << status;
+    ss << statusMsg.length() << "$" << statusMsg;
     
     ss << headers.size() << "$";
     for (const auto& pair : headers) {
@@ -73,15 +73,15 @@ std::string HttpRequest::serialize() {
     return ss.str();
 }
 
- HttpRequest HttpRequest::deserialize(const std::string& data) {
-    HttpRequest req;
+ HttpResponse HttpResponse::deserialize(const std::string& data) {
+    HttpResponse req;
     std::string result = "";
     int newStart = extractFieldFrom(0, data, result);
-    req.method = result;
-    newStart = extractFieldFrom(newStart, data, result);
-    req.url = result;
-    newStart = extractFieldFrom(newStart, data, result);
     req.version = result;
+    newStart = extractFieldFrom(newStart, data, result);
+    req.status = result;
+    newStart = extractFieldFrom(newStart, data, result);
+    req.statusMsg = result;
 
     std::map<std::string, std::string> headers = {};
     newStart = extractHeaders(newStart, data, headers);
@@ -92,9 +92,9 @@ std::string HttpRequest::serialize() {
     return req;
 }
 
-std::string HttpRequest::stringify() {
+std::string HttpResponse ::stringify() {
     std::stringstream ss;
-    ss << method << " " << url << " " << version << "\n";
+    ss << version << " " << status << " " << statusMsg << "\n";
     for (const auto& pair : headers) {
         ss << pair.first << ": " << pair.second << "\n";
     }

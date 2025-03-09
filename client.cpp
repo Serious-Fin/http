@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 #include "http_request.h"
+#include "http_response.h"
 
 int createSocket(long address = INADDR_ANY, int port = 8080);
 void sendHTTP(const char* message);
@@ -26,7 +27,10 @@ int main() {
 }
 
 std::string createHttpRequest(std::string message) {
-    HttpRequest req("GET", message);
+    HttpRequest req("POST", message, "HTTP/1.0");
+    req.headers["Authentication"] = "Finnish-Fish";
+    req.headers["User-Agent"] = "NCSA_Mosaic/2.0 (Windows 3.1)";
+    req.body = "<Request Body>";
     return req.serialize();
 }
 
@@ -47,7 +51,8 @@ void sendHTTP(const char* message) {
     if (received == -1) {
         throw std::runtime_error("Failed getting response:" + std::string(strerror(errno)));
     }
-    std::cout << "Resp: " << buffer << "\n";
+    HttpResponse resp = HttpResponse::deserialize(buffer);
+    std::cout << "Resp: " << resp.stringify() << "\n";
     close(clientSocket);
 }
 
